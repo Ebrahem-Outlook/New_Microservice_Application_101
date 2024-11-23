@@ -1,4 +1,9 @@
 
+using Microsoft.EntityFrameworkCore;
+using Order.API.Database;
+using Order.API.Extentions;
+using System.Reflection;
+
 namespace Order.API
 {
     public class Program
@@ -7,9 +12,15 @@ namespace Order.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
 
             builder.Services.AddControllers();
+
+            string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+
+            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
+
+            builder.Services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -22,6 +33,8 @@ namespace Order.API
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.ApplyMigrations();
 
             app.UseHttpsRedirection();
 
