@@ -1,0 +1,108 @@
+version: '3.9'  # Specify a modern Compose file version
+
+services:
+  user.api:
+    image: ${DOCKER_REGISTRY:-local}/userapi:latest
+    container_name: user_api
+    build:
+      context: .
+      dockerfile: User.API/Dockerfile
+    ports:
+      - "4001:443"  # HTTPS port for User.API
+    depends_on:
+      - postgres.db
+      - massegebroker.rm
+    networks:
+      - app_network
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      CONNECTION_STRINGS__DB: "Host=postgres_db;Port=5432;Database=app_database;Username=admin;Password=strong_password_here"
+
+  notification.api:
+    image: ${DOCKER_REGISTRY:-local}/notificationapi:latest
+    container_name: notification_api
+    build:
+      context: .
+      dockerfile: Notification.API/Dockerfile
+    ports:
+      - "7001:443"  # HTTPS port for Notification.API
+    depends_on:
+      - postgres.db
+      - massegebroker.rm
+    networks:
+      - app_network
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      CONNECTION_STRINGS__DB: "Host=postgres_db;Port=5432;Database=app_database;Username=admin;Password=strong_password_here"
+
+  order.api:
+    image: ${DOCKER_REGISTRY:-local}/orderapi:latest
+    container_name: order_api
+    build:
+      context: .
+      dockerfile: Order.API/Dockerfile
+    ports:
+      - "6001:443"  # HTTPS port for Order.API
+    depends_on:
+      - postgres.db
+      - massegebroker.rm
+    networks:
+      - app_network
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      CONNECTION_STRINGS__DB: "Host=postgres_db;Port=5432;Database=app_database;Username=admin;Password=strong_password_here"
+
+  product.api:
+    image: ${DOCKER_REGISTRY:-local}/productapi:latest
+    container_name: product_api
+    build:
+      context: .
+      dockerfile: Product.API/Dockerfile
+    ports:
+      - "5001:443"  # HTTPS port for Product.API
+    depends_on:
+      - postgres.db
+      - massegebroker.rm
+    networks:
+      - app_network
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      CONNECTION_STRINGS__DB: "Host=postgres_db;Port=5432;Database=app_database;Username=admin;Password=strong_password_here"
+
+  postgres.db:
+    image: postgres:15  # Use a specific PostgreSQL version
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: admin  # Replace with a secure username
+      POSTGRES_PASSWORD: strong_password_here  # Use a strong password
+      POSTGRES_DB: app_database  # Specify a default database
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist database data
+    ports:
+      - "5432:5432"  # Default PostgreSQL port
+    networks:
+      - app_network
+
+  massegebroker.rm:
+    image: rabbitmq:3-management  # Use a specific RabbitMQ version
+    container_name: message_broker_rabbitmq
+    hostname: rabbit-mq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin  # Secure RabbitMQ username
+      RABBITMQ_DEFAULT_PASS: strong_password_here  # Secure RabbitMQ password
+    ports:
+      - "15672:15672"  # Management console
+      - "5672:5672"    # Message broker port
+    volumes:
+      - ./containers/queue/data:/var/lib/rabbitmq
+      - ./containers/queue/log:/var/log/rabbitmq
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+    driver: local  # Persist PostgreSQL data locally
+
+networks:
+  app_network:
+    driver: bridge  # Isolate service communication
