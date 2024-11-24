@@ -10,6 +10,7 @@ public sealed record GetAllUsersCommand() : IRequest<List<Users>>;
 internal sealed class GetAllUsersCommandHandler : IRequestHandler<GetAllUsersCommand, List<Users>>
 {
     private readonly ApplicationDbContext dbContext;
+    
 
     public GetAllUsersCommandHandler(ApplicationDbContext dbContext)
     {

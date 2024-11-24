@@ -22,6 +22,23 @@ namespace Product.API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Contracts.ProductCreatedEvent", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("ProductCreatedEvents");
+                });
+
             modelBuilder.Entity("Product.API.Models.Products", b =>
                 {
                     b.Property<Guid>("Id")

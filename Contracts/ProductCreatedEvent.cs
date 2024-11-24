@@ -1,7 +1,8 @@
 ﻿namespace Contracts;
 
-public sealed record ProductCreatedEvent
+public record ProductCreatedEvent
 {
-    public Guid Id { get; set; }
+    public Guid EventId { get; set; }
+    public Guid ProductId { get; set; }
     public DateTime CreatedOnUtc{ get; set; }
 }

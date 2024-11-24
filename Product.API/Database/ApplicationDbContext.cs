@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Contracts;
+using Microsoft.EntityFrameworkCore;
 using Product.API.Models;
 using System.Reflection;
 

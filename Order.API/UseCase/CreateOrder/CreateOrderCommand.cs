@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Contracts;
+using MassTransit;
+using MediatR;
 using Order.API.Database;
 using Order.API.Models;
 
@@ -8,10 +10,12 @@ public sealed record CreateOrderCommand(List<Guid> ProductIds) : IRequest<Orders
 
 internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Orders>
 {
+    private readonly IPublishEndpoint publishEndpoint;
     private readonly ApplicationDbContext dbContext;
 
-    public CreateOrderCommandHandler(ApplicationDbContext dbContext)
+    public CreateOrderCommandHandler(IPublishEndpoint publishEndpoint, ApplicationDbContext dbContext)
     {
+        this.publishEndpoint = publishEndpoint;
         this.dbContext = dbContext;
     }
 
@@ -22,6 +26,13 @@ internal sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCom
         await dbContext.AddAsync(order);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await publishEndpoint.Publish(new OrderCreatedEvent
+        {
+            EventId = Guid.NewGuid(),
+            OrderId = order.Id,
+            CreatedOnUtc = DateTime.UtcNow,
+        }, cancellationToken);
 
         return order;
     }

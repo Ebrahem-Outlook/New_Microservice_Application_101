@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Contracts;
+using MassTransit;
+using MediatR;
 using Product.API.Database;
 using Product.API.Models;
 
@@ -9,10 +11,12 @@ public sealed record CreateProductCommand(string name, decimal price, int stock)
 internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Products>
 {
     private readonly ApplicationDbContext dbContext;
+    public readonly IPublishEndpoint publishEndpoint;
 
-    public CreateProductCommandHandler(ApplicationDbContext dbContext)
+    public CreateProductCommandHandler(ApplicationDbContext dbContext, IPublishEndpoint publishEndpoint)
     {
         this.dbContext = dbContext;
+        this.publishEndpoint = publishEndpoint;
     }
 
     public async Task<Products> Handle(CreateProductCommand request, CancellationToken cancellationToken)
@@ -22,6 +26,13 @@ internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProduc
         await dbContext.AddAsync(product, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken); 
+
+        await publishEndpoint.Publish(new ProductCreatedEvent
+        {
+            EventId = Guid.NewGuid(),
+            ProductId = product.Id,
+            CreatedOnUtc = DateTime.UtcNow,
+        }, cancellationToken);
 
         return product;
     }

@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Contracts;
+using MassTransit;
+using MediatR;
 using User.API.Database;
 using User.API.Models;
 
@@ -13,10 +15,12 @@ public sealed record CreateUserCommand(
 internal sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Users>
 {
     private readonly ApplicationDbContext dbContext;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public CreateUserCommandHandler(ApplicationDbContext dbContext)
+    public CreateUserCommandHandler(ApplicationDbContext dbContext, IPublishEndpoint publishEndpoint)
     {
         this.dbContext = dbContext;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Users> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -26,6 +30,15 @@ internal sealed class CreateUserCommandHandler : IRequestHandler<CreateUserComma
         await dbContext.AddAsync(user);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+
+        await _publishEndpoint.Publish(
+                new UserCreatedEvent
+                {
+                    EventId = Guid.NewGuid(),
+                    UserId = user.Id,
+                    CreatedOnUtc = DateTime.UtcNow,
+                }, cancellationToken);
 
         return user;
     }
